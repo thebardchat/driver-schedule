@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Driver Schedule</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .schedule-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 1000px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .driver-row {
+            display: grid;
+            grid-template-columns: 200px 120px 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .driver-row input, .driver-row textarea {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .driver-row input:focus, .driver-row textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        .driver-name {
+            font-weight: bold;
+        }
+        .start-time {
+            text-align: center;
+        }
+        .tasks {
+            resize: vertical;
+            min-height: 35px;
+            font-family: Arial, sans-serif;
+        }
+        .header {
+            display: grid;
+            grid-template-columns: 200px 120px 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .add-driver {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .add-driver:hover {
+            background: #1976D2;
+        }
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        .save-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="schedule-container">
+        <h1>🚛 Quick Driver Schedule</h1>
+        
+        <div class="header">
+            <div>Driver Name</div>
+            <div>Start Time</div>
+            <div>Tasks/Routes (Shorthand)</div>
+        </div>
+        
+        <div id="drivers-list">
+            <!-- Driver rows will be added here -->
+        </div>
+        
+        <button class="add-driver" onclick="addDriver()">+ Add Driver</button>
+        <button class="save-btn" onclick="saveSchedule()">Save Schedule</button>
+    </div>
+
+    <script>
+        let driverCount = 0;
+
+        function addDriver() {
+            driverCount++;
+            const driversList = document.getElementById('drivers-list');
+            
+            const driverRow = document.createElement('div');
+            driverRow.className = 'driver-row';
+            driverRow.innerHTML = `
+                <input type="text" class="driver-name" placeholder="Driver Name" id="driver-${driverCount}">
+                <input type="time" class="start-time" value="04:30" id="time-${driverCount}">
+                <textarea class="tasks" placeholder="Mount Hope → 67s → Palmer, then Cherokee → 78s → Cullman..." id="tasks-${driverCount}"></textarea>
+            `;
+            
+            driversList.appendChild(driverRow);
+        }
+
+ function saveSchedule() {
+    const drivers = [];
+    const rows = document.querySelectorAll('.driver-row');
+    
+    rows.forEach(row => {
+        const name = row.querySelector('.driver-name').value;
+        const time = row.querySelector('.start-time').value;
+        const tasks = row.querySelector('.tasks').value;
+        
+        if (name.trim()) {
+            drivers.push({ name: name, startTime: time, tasks: tasks });
+        }
+    });
+    
+    // 1. Save locally (this is good for backup)
+    localStorage.setItem('driverSchedule', JSON.stringify(drivers));
+    
+    // 2. Send the data to your Google Apps Script
+    // ⚠️ PASTE THE WEB APP URL YOU COPIED IN PART 1 HERE!
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzFpJMWG0ZGx2sygNlXfHz3bHD44cP0kx8WVvmVhSyaWV8bSGjO6ECJedXFCWgPVi1BrA/exec
+'; 
+
+    fetch(scriptURL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(drivers),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            console.log('Success! Data sent to Google Calendar.');
+            alert(`Schedule saved locally and sent to Google Calendar for ${drivers.length} drivers!`);
+        } else {
+            // Log the error message from the script
+            console.error('Google Apps Script Error:', data.message);
+            alert('Error sending to calendar. Check the console for details.');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch Error:', error);
+        alert('Schedule saved locally, but failed to send to Google Calendar.');
+    });
+}
+
+        // Add 18 drivers by default
+        for (let i = 0; i < 18; i++) {
+            addDriver();
+        }
+    </script>
+</body>
+</html>
